@@ -11,3 +11,6 @@ ray
 matplotlib
 psutil
 requests
+pandas
+gorilla
+tabulate
