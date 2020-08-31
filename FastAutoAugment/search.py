@@ -147,7 +147,7 @@ if __name__ == '__main__':
     parser.add_argument('--num-search', type=int, default=200)
     parser.add_argument('--cv-ratio', type=float, default=0.4)
     parser.add_argument('--decay', type=float, default=-1)
-    parser.add_argument('--redis', type=str, default='gpu-cloud-vnode30.dakao.io:23655')
+    # parser.add_argument('--redis', type=str, default='gpu-cloud-vnode30.dakao.io:23655')
     parser.add_argument('--per-class', action='store_true')
     parser.add_argument('--resume', action='store_true')
     parser.add_argument('--smoke-test', action='store_true')
@@ -161,7 +161,8 @@ if __name__ == '__main__':
     logger.info('configuration...')
     logger.info(json.dumps(C.get().conf, sort_keys=True, indent=4))
     logger.info('initialize ray...')
-    ray.init(redis_address=args.redis)
+    # ray.init(redis_address=args.redis)
+    ray.init()
 
     num_result_per_cv = 10
     cv_num = 5
