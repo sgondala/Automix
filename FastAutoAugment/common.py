@@ -17,13 +17,11 @@ def get_logger(name, level=logging.DEBUG):
     logger.addHandler(ch)
     return logger
 
-
 def add_filehandler(logger, filepath, level=logging.DEBUG):
     fh = logging.FileHandler(filepath)
     fh.setLevel(level)
     fh.setFormatter(formatter)
     logger.addHandler(fh)
-
 
 class EMA:
     def __init__(self, mu):

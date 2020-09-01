@@ -83,8 +83,8 @@ def get_model(conf, num_class=10, local_rank=-1):
         model = model.to(device)
         model = DistributedDataParallel(model, device_ids=[local_rank], output_device=local_rank)
     else:
-        model = model.cuda()
-#         model = DataParallel(model)
+        pass
+        # model = model.cuda()
 
     cudnn.benchmark = True
     return model

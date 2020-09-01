@@ -31,8 +31,10 @@ from warmup_scheduler import GradualWarmupScheduler
 logger = get_logger('Fast AutoAugment')
 logger.setLevel(logging.INFO)
 
-
-def run_epoch(model, loader, loss_fn, optimizer, desc_default='', epoch=0, writer=None, verbose=1, scheduler=None, is_master=True, ema=None, wd=0.0, tqdm_disabled=False):
+def run_epoch(model, loader, loss_fn, 
+        optimizer, desc_default='', epoch=0, writer=None, 
+        verbose=False, scheduler=None, is_master=True, ema=None, 
+        wd=0.0, tqdm_disabled=False, cuda=False):
     if verbose:
         loader = tqdm(loader, disable=tqdm_disabled)
         loader.set_description('[%s %04d/%04d]' % (desc_default, epoch, C.get()['epoch']))
@@ -46,7 +48,11 @@ def run_epoch(model, loader, loss_fn, optimizer, desc_default='', epoch=0, write
     steps = 0
     for data, label in loader:
         steps += 1
-        data, label = data.cuda(), label.cuda()
+        # if steps == 10:
+        #     print('Breaking at 10 steps')
+        #     break
+        if cuda:
+            data, label = data.cuda(), label.cuda()
 
         if C.get().conf.get('mixup', 0.0) <= 0.0 or optimizer is None:
             preds = model(data)
@@ -119,8 +125,8 @@ def train_and_eval(tag, dataroot, test_ratio=0.0, cv_fold=0, reporter=None, metr
         total_batch = C.get()["batch"] * dist.get_world_size()
 
     is_master = local_rank < 0 or dist.get_rank() == 0
-    if is_master:
-        add_filehandler(logger, args.save + '.log')
+    # if is_master:
+    #     add_filehandler(logger, args.save + '.log')
 
     if not reporter:
         reporter = lambda **kwargs: 0
@@ -303,7 +309,8 @@ def train_and_eval(tag, dataroot, test_ratio=0.0, cv_fold=0, reporter=None, metr
 
                 # save checkpoint
                 if is_master and save_path:
-                    logger.info('save model@%d to %s, err=%.4f' % (epoch, save_path, 1 - best_top1))
+                    # logger.info('save model@%d to %s, err=%.4f' % (epoch, save_path, 1 - best_top1))
+                    print('save path ', save_path)
                     torch.save({
                         'epoch': epoch,
                         'log': {
@@ -325,7 +332,7 @@ def train_and_eval(tag, dataroot, test_ratio=0.0, cv_fold=0, reporter=None, metr
 if __name__ == '__main__':
     parser = ConfigArgumentParser(conflict_handler='resolve')
     parser.add_argument('--tag', type=str, default='')
-    parser.add_argument('--dataroot', type=str, default='/data/private/pretrainedmodels', help='torchvision data folder')
+    parser.add_argument('--dataroot', type=str, default='data')
     parser.add_argument('--save', type=str, default='test.pth')
     parser.add_argument('--cv-ratio', type=float, default=0.0)
     parser.add_argument('--cv', type=int, default=0)

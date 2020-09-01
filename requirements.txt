@@ -7,10 +7,10 @@ pretrainedmodels
 tqdm
 tensorboardx
 sklearn
-ray
 matplotlib
 psutil
 requests
 pandas
 gorilla
 tabulate
+ray==0.6.5
