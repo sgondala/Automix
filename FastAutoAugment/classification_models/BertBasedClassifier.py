@@ -33,7 +33,11 @@ class BertBasedClassifier(LightningModule):
     
     def validation_step(self, batch, batch_idx):
         inputs, attention_mask, labels, lengths = batch
-        loss = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)[0]
+        out = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)
+        loss = out[0]
+        logits = out[1]
+        print(logits, labels)
+        assert False
         return {'loss': loss}
     
     def validation_end(self, outputs):
