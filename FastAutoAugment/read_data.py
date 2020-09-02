@@ -33,8 +33,8 @@ def get_datasets(data_path,
     X_train, X_val, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42)
 
     # Build the dataset class for each set
-    train_dataset = create_dataset(X_train, y_train, tokenizer, max_seq_len)
-    val_dataset = create_dataset(X_val, y_val, tokenizer, max_seq_len)
+    train_dataset = create_dataset(X_train[:10], y_train[:10], tokenizer, max_seq_len)
+    val_dataset = create_dataset(X_val[:10], y_val[:10], tokenizer, max_seq_len)
 
     return train_dataset, val_dataset, n_labels
 

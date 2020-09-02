@@ -141,36 +141,17 @@ def eval_tta(config, augment, reporter):
 
 
 if __name__ == '__main__':
-    # w = PyStopwatch()
     args = parse_search_opts()
-
-    # if args.decay > 0:
-    #     logger.info('decay=%.4f' % args.decay)
-    #     C.get()['optimizer']['decay'] = args.decay
-
-    # filehandler_name = f"{C.get()['dataset']}_{C.get()['model']['type']}_cv{args.cv_ratio}.log"
-    # add_filehandler(logger, os.path.join('models', filehandler_name))
-    # logger.info('configuration...')
-    # logger.info(json.dumps(C.get().conf, sort_keys=True, indent=4))
-    # logger.info('initialize ray...')
-    # ray.init(redis_address=args.redis)
 
     ray.init()
 
     copied_c = copy.deepcopy(C.get().conf)
-
-    # logger.info('search augmentation policies, dataset=%s model=%s' % (C.get()['dataset'], C.get()['model']['type']))
-    # logger.info('----- Train without Augmentations cv=%d ratio (test) =%.1f -----' % (args.cv_num, args.cv_ratio))
-    
-    # w.start(tag='train_no_aug')
     
     saved_model_paths = [
                 _get_path(C.get()['dataset'], C.get()['model']['type'], 
                         'ratio%.1f_fold%d' % (args.cv_ratio, i)) 
                 for i in range(args.cv_num)
             ]
-    
-    # print(saved_model_paths, sep='\n')
     
     # Ray request to train base models
     requests = [
