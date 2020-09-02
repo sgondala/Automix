@@ -27,8 +27,12 @@ class BertBasedClassifier(LightningModule):
     
     def training_step(self, batch, batch_idx):
         inputs, attention_mask, labels, lengths = batch
-        loss = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)[0]
-        logs = {'train_loss': loss}
+        out = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)
+        loss = out[0]
+        logits = out[1]
+        labels_predicted = torch.argmax(logits, dim=1)
+        accuracy = (labels_predicted == labels).float().mean()
+        logs = {'train_loss': loss, 'train_accuracy': accuracy}
         return {'loss': loss, 'log': logs}
     
     def validation_step(self, batch, batch_idx):
@@ -36,13 +40,14 @@ class BertBasedClassifier(LightningModule):
         out = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)
         loss = out[0]
         logits = out[1]
-        print(logits, labels)
-        assert False
-        return {'loss': loss}
+        labels_predicted = torch.argmax(logits, dim=1)
+        accuracy = (labels_predicted == labels).float().mean()
+        return {'loss': loss, 'accuracy':accuracy}
     
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        logs = {'val_loss': avg_loss}
+        accuracy = torch.stack([x['accuracy'] for x in outputs]).mean()
+        logs = {'val_loss': avg_loss, 'val_accuracy': accuracy}
         return {'avg_val_loss': avg_loss, 'log': logs}
 
     def configure_optimizers(self):
