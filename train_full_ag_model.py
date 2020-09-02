@@ -20,30 +20,30 @@ from FastAutoAugment.classification_models.TestClassifier import *
 import pickle
 import wandb
 
+if __name__ == "__main__":
+    seed_everything(42)
 
-seed_everything(42)
+    wandb_logger = WandbLogger(name='train_full_ag_model_adam_2e5', project='autoaugment')
 
-wandb_logger = WandbLogger(name='train_full_ag_model_adam_2e5', project='autoaugment')
+    full_train_data = pickle.load(open('data/ag_news_v1/ag_news_full_train.pkl', 'rb'))
+    full_val_data = pickle.load(open('data/ag_news_v1/ag_news_full_val.pkl', 'rb'))
 
-full_train_data = pickle.load(open('data/ag_news_v1/ag_news_full_train.pkl', 'rb'))
-full_val_data = pickle.load(open('data/ag_news_v1/ag_news_full_val.pkl', 'rb'))
+    model_name = 'distilbert-base-uncased'
 
-model_name = 'distilbert-base-uncased'
+    train_dataset = create_dataset(
+        full_train_data['X'], full_train_data['y'], model_name, 256)
+    val_dataset = create_dataset(
+        full_val_data['X'], full_val_data['y'], model_name, 256)
 
-train_dataset = create_dataset(
-    full_train_data['X'], full_train_data['y'], model_name, 256)
-val_dataset = create_dataset(
-    full_val_data['X'], full_val_data['y'], model_name, 256)
+    train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3)
+    val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
 
-train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3)
-val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
+    early_stopping = EarlyStopping('avg_val_loss')
 
-early_stopping = EarlyStopping('avg_val_loss')
+    trainer = pl.Trainer(deterministic=True, 
+        weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping, 
+        logger=wandb_logger,
+        gpus=2)
 
-trainer = pl.Trainer(deterministic=True, 
-    weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping, 
-    logger=wandb_logger,
-    gpus=2)
-
-model = TestClassifier(model_name=model_name, num_labels=4)
-trainer.fit(model, train_dataloader, val_dataloader)
+    model = TestClassifier(model_name=model_name, num_labels=4)
+    trainer.fit(model, train_dataloader, val_dataloader)
