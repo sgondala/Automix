@@ -16,7 +16,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.read_data import *
 
 class SimpleClassifier(LightningModule):
-    def __init__(self, model_name='distilbert-base-uncased', num_labels=2):
+    def __init__(self, model_name='distilbert-base-uncased', num_labels=4):
         super().__init__()
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=num_labels)
