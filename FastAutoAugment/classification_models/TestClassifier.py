@@ -15,30 +15,33 @@ import transformers
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.read_data import *
 
-class SimpleClassifier(LightningModule):
+class TestClassifier(LightningModule):
     def __init__(self, model_name='distilbert-base-uncased', num_labels=4):
         super().__init__()
-        self.model = AutoModelForSequenceClassification.from_pretrained(
-            model_name, num_labels=num_labels)
-    
-    def forward(self, inputs, labels):
-        out = self.model(**inputs, labels=labels)
+        self.model = nn.Linear(256, 4)
+        self.loss = nn.CrossEntropyLoss()
+        
+    def forward(self, inputs):
+        out = self.model(inputs)
         return out
     
     def training_step(self, batch, batch_idx):
-        inputs, attention_mask, labels, lengths = batch
-        loss = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)[0]
+        inputs, _, labels, _ = batch
+        out = self(inputs.float())
+        loss = self.loss(out, labels)
         logs = {'train_loss': loss}
         return {'loss': loss, 'log': logs}
     
     def validation_step(self, batch, batch_idx):
-        inputs, attention_mask, labels, lengths = batch
-        loss = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)[0]
-        return {'loss': loss}
+        inputs, _, labels, _ = batch
+        out = self(inputs.float())
+        loss = self.loss(out, labels)
+        logs = {'val_loss': loss}
+        return {'loss': loss, 'log': logs}
     
     def validation_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
-        logs = {'val_loss': avg_loss}
+        logs = {'avg_val_loss': avg_loss}
         return {'avg_val_loss': avg_loss, 'log': logs}
 
     def configure_optimizers(self):

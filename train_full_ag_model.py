@@ -15,8 +15,11 @@ import numpy as np
 import transformers
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.read_data import *
+from FastAutoAugment.classification_models.TestClassifier import *
+
 import pickle
 import wandb
+
 
 seed_everything(42)
 
@@ -37,7 +40,10 @@ val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
 
 early_stopping = EarlyStopping('avg_val_loss')
 
-trainer = pl.Trainer(deterministic=True, weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping)
+trainer = pl.Trainer(deterministic=True, 
+    weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping, 
+    logger=wandb_logger,
+    n_gpus=2)
 
-model = SimpleClassifier(model_name=tokenizer_type, num_labels=4)
+model = TestClassifier(model_name=model_name, num_labels=4)
 trainer.fit(model, train_dataloader, val_dataloader)
