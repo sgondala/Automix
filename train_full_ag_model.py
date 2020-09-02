@@ -43,7 +43,7 @@ early_stopping = EarlyStopping('avg_val_loss')
 trainer = pl.Trainer(deterministic=True, 
     weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping, 
     logger=wandb_logger,
-    n_gpus=2)
+    gpus=2)
 
 model = TestClassifier(model_name=model_name, num_labels=4)
 trainer.fit(model, train_dataloader, val_dataloader)
