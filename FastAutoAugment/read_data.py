@@ -10,6 +10,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 
 def read_csv_and_return_x_y(data_path, dataset_type='ag_news'): 
     train_df = pd.read_csv(data_path, header=None)
+    train_df = train_df.dropna()
     # Here we only use the bodies and removed titles to do the classifications
     if dataset_type=="imdb":
         assert False
@@ -36,6 +37,7 @@ def get_datasets(data_path,
     tokenizer = AutoTokenizer.from_pretrained(model)
 
     train_df = pd.read_csv(data_path, header=None)
+    train_df = train_df.dropna()
     
     # Here we only use the bodies and removed titles to do the classifications
     n_labels = 0

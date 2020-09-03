@@ -13,7 +13,7 @@ import pickle
 seed=42
 
 X, y = read_csv_and_return_x_y('data/yahoo_answers_csv/train.csv', 'yahoo_answers')
-X_use, _, y_use,_ = train_test_split(X, y, test_size=0.9, random_state=seed, stratify=y)
+X_use, _, y_use,_ = train_test_split(X, y, test_size=0.8, random_state=seed, stratify=y)
 X_train, X_val, y_train, y_val = train_test_split(X_use, y_use, test_size=0.25, random_state=seed, stratify=y_use)
 
 assert len(X_train) == len(y_train)
