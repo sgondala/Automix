@@ -17,7 +17,9 @@ def read_csv_and_return_x_y(data_path, dataset_type='ag_news'):
         # Converting 1-4 to 0-3
         y = np.array(train_df[0].values) - 1
         X = np.array(train_df[2].values)
-        n_labels = 4    
+    elif dataset_type=="yahoo_answers":
+        y = np.array(train_df[0].values) - 1
+        X = np.array(train_df[2].values)
     return X, y
 
 def get_datasets(data_path, 
