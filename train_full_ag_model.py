@@ -16,6 +16,7 @@ import transformers
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.read_data import *
 from FastAutoAugment.classification_models.TestClassifier import *
+from FastAutoAugment.classification_models.BertBasedClassifier import *
 
 import pickle
 import wandb
@@ -43,7 +44,8 @@ if __name__ == "__main__":
     trainer = pl.Trainer(deterministic=True, 
         weights_save_path='checkpoints/full_ag_classifier_baseline/', early_stop_callback=early_stopping, 
         logger=wandb_logger,
+        distributed_backend='ddp',
         gpus=2)
 
-    model = TestClassifier(model_name=model_name, num_labels=4)
+    model = BertBasedClassifier(model_name=model_name, num_labels=4)
     trainer.fit(model, train_dataloader, val_dataloader)
