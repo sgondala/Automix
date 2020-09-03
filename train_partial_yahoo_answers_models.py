@@ -38,7 +38,7 @@ if __name__ == "__main__":
         train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3)
         val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
 
-        early_stopping = EarlyStopping('avg_val_loss')
+        early_stopping = EarlyStopping('avg_val_loss', patience=7)
 
         trainer = pl.Trainer(deterministic=True, 
             weights_save_path=f'checkpoints/partial_yahoo_answers_classifier_{i}/', early_stop_callback=early_stopping, 
