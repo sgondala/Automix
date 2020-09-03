@@ -37,6 +37,7 @@ def get_datasets(data_path,
     tokenizer = AutoTokenizer.from_pretrained(model)
 
     train_df = pd.read_csv(data_path, header=None)
+    train_df = train_df.dropna()
     
     # Here we only use the bodies and removed titles to do the classifications
     n_labels = 0
