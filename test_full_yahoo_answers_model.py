@@ -40,4 +40,5 @@ if __name__ == "__main__":
         # logger=wandb_logger,
         gpus=1)
 
-    trainer.test(val_dataloader)
+    model = LightningModule.load_from_checkpoint('checkpoints/full_yahoo_answers_classifier_baseline/')
+    trainer.test(model=model, test_dataloader=val_dataloader)
