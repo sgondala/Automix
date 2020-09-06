@@ -36,14 +36,14 @@ if __name__ == "__main__":
     val_dataset = create_dataset(
         full_val_data['X'], full_val_data['y'], model_name, 256)
 
-    train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3)
-    val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
+    train_dataloader = DataLoader(train_dataset, batch_size=16, num_workers=3)
+    val_dataloader = DataLoader(val_dataset, batch_size=16, num_workers=3)
 
-    early_stopping = EarlyStopping('avg_val_loss', patience=7)
+    early_stopping = EarlyStopping('avg_val_loss', patience=5)
 
     trainer = pl.Trainer(deterministic=True, 
-        weights_save_path='checkpoints/full_yahoo_answers_classifier_baseline/', early_stop_callback=early_stopping, 
-        logger=wandb_logger,
+        weights_save_path='checkpoints/full_yahoo_answers_classifier_baseline/', 
+        early_stop_callback=early_stopping, 
         distributed_backend='ddp',
         gpus=2)
 

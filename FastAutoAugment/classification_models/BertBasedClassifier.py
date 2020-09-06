@@ -17,9 +17,13 @@ from FastAutoAugment.read_data import *
 
 class BertBasedClassifier(LightningModule):
     def __init__(self, model_name='distilbert-base-uncased', num_labels=4):
+        print('Model name ', model_name)
+        print('num_labels ', num_labels)
         super().__init__()
+        print(model_name, num_labels)
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=num_labels)
+        self.save_hyperparameters()
     
     def forward(self, inputs, labels):
         out = self.model(**inputs, labels=labels)

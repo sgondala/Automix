@@ -22,23 +22,6 @@ import pickle
 import wandb
 
 if __name__ == "__main__":
-    seed_everything(42)
-
-    # wandb_logger = WandbLogger(name='test_full_yahoo_answers_model_adam_2e5', project='autoaugment')
-
-    full_val_data = pickle.load(open('data/yahoo_answers_v1/yahoo_answers_full_val.pkl', 'rb'))
-
-    model_name = 'distilbert-base-uncased'
-
-    val_dataset = create_dataset(
-        full_val_data['X'], full_val_data['y'], model_name, 256)
-
-    val_dataloader = DataLoader(val_dataset, batch_size=32, num_workers=3)
-
-    trainer = pl.Trainer(deterministic=True, 
-        weights_save_path='checkpoints/full_yahoo_answers_classifier_baseline/', 
-        # logger=wandb_logger,
-        gpus=1)
-
-    model = LightningModule.load_from_checkpoint('checkpoints/full_yahoo_answers_classifier_baseline/')
-    trainer.test(model=model, test_dataloader=val_dataloader)
+    model = BertBasedClassifier.load_from_checkpoint('checkpoints/full_yahoo_answers_classifier_baseline_without_wandb/lightning_logs/version_3/checkpoints/epoch=0.ckpt')
+    # model = torch.load('checkpoints/full_yahoo_answers_classifier_baseline_without_wandb/lightning_logs/version_1/checkpoints/epoch=0.ckpt')
+    # trainer.test(test_dataloaders=val_dataloader, ckpt_path='checkpoints/full_yahoo_answers_classifier_baseline_without_wandb/lightning_logs/version_1/checkpoints/epoch=0.ckpt')
