@@ -42,7 +42,8 @@ if __name__ == "__main__":
     early_stopping = EarlyStopping('avg_val_loss', patience=5)
 
     trainer = pl.Trainer(deterministic=True, 
-        weights_save_path='checkpoints/full_yahoo_answers_classifier_baseline/', 
+        weights_save_path='checkpoints/full_yahoo_answers_classifier_baseline/',
+        logger=wandb_logger, 
         early_stop_callback=early_stopping, 
         distributed_backend='ddp',
         gpus=2)
