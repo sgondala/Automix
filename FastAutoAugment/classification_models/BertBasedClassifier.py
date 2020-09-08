@@ -54,6 +54,12 @@ class BertBasedClassifier(LightningModule):
         logs = {'val_loss': avg_loss, 'val_accuracy': accuracy}
         return {'avg_val_loss': avg_loss, 'log': logs}
 
+    def test_step(self, batch, batch_idx):
+        return self.validation_step(batch, batch_idx)
+    
+    def test_end(self, outputs):
+        return self.validation_end(outputs)
+
     def configure_optimizers(self):
         return Adam(self.parameters(), lr=2e-5)
 

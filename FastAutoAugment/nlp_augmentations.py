@@ -105,7 +105,7 @@ def get_synonyms(word):
 def random_deletion(words, p):
 
     #obviously, if there's only one word, don't delete it
-    if len(words) == 1:
+    if len(words) < 1:
         return words
 
     #randomly delete words with probability p
