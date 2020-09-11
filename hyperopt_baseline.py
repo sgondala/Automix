@@ -35,15 +35,17 @@ def optimization_function(args):
     number_of_data = [n1,n2,n3,n4]
 
     model_name = 'distilbert-base-uncased'
-    full_val_data = pickle.load(open('data/yahoo_answers_v1/yahoo_answers_full_val.pkl', 'rb'))
+    val = pickle.load(open('data/yahoo_answers_0.2_percent/yahoo_answers_val.pkl', 'rb'))
     
-    length_of_full_data = len(full_val_data['X'])
-    indices = list(range(length_of_full_data))
-    random.Random(42).shuffle(indices) # Making sure we get same indices everytime; why not just save?
-    indices = indices[:int(length_of_full_data/2)]
+    # length_of_full_data = len(val['X'])
+    # indices = list(range(length_of_full_data))
+    # random.Random(42).shuffle(indices) # Making sure we get same indices everytime; why not just save?
+    # indices = indices[:int(length_of_full_data/2)]
 
-    actual_X = np.array(full_val_data['X'])[indices]
-    actual_y = np.array(full_val_data['y'])[indices]
+    # actual_X = np.array(val['X'])[indices]
+    # actual_y = np.array(val['y'])[indices]
+    actual_X = val['X']
+    actual_y = val['y']
     
     augmentations = [synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform]
 
@@ -54,24 +56,27 @@ def optimization_function(args):
     all_aug_y = []
 
     for i in range(len(augmentations)):
-        print(f'Creating dataset {i}')
+        # print(f'Creating dataset {i}')
         new_X, new_y = create_augmented_dataset(actual_X, actual_y, augmentations[i], probabilities[i], number_of_data[i])
         all_aug_X += new_X
         all_aug_y += new_y
-        
-    print('Length of dataset ', len(actual_X))
+
+    all_aug_X += actual_X.tolist()
+    all_aug_y += actual_y.tolist()
+
+    # print('Length of dataset ', len(actual_X))
 
     # val_dataset = create_dataset(actual_X, actual_y, model_name, 256)
     val_dataset = create_dataset(all_aug_X, all_aug_y, model_name, 256)
 
-    wandb_name = 'hyperopt_experiments_'
+    wandb_name = 'hyperopt_experiments_yahoo_0.2_percent_with_original_'
     for i in range(len(augmentations)):
         wandb_name += str(probabilities[i]) + '_' + str(number_of_data[i]) + '_'
 
-    print('Before evaluate ')
+    # print('Before evaluate ')
     val_accuracy = evaluate_dataset_on_model(
         wandb_name = wandb_name, 
-        checkpoint = 'checkpoints/full_yahoo_answers_classifier_baseline/lightning_logs/version_7/checkpoints/epoch=6.ckpt',
+        checkpoint = 'checkpoints/yahoo_answers_0.2_base_train/autoaugment/2h91rmje/checkpoints/epoch=3.ckpt',
         dataset = val_dataset,
     )[0]['val_accuracy']
 
@@ -98,6 +103,4 @@ if __name__ == "__main__":
         max_evals=200,
         trials=trials)
     
-    pickle.dump(trials, open('trials_hyperopt_sept_7.pkl', 'wb'))
-
-    
+    pickle.dump(trials, open('trials_hyperopt_yahoo_0.2_percent.pkl', 'wb'))    

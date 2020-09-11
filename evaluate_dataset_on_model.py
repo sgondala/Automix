@@ -23,17 +23,17 @@ import wandb
 
 def evaluate_dataset_on_model(wandb_name, checkpoint, dataset):    
     # seed_everything(42)
-    print('Inside evaluate ')
+    # print('Inside evaluate ')
     wandb_logger = WandbLogger(name=wandb_name, project='autoaugment')
 
     model = BertBasedClassifier.load_from_checkpoint(checkpoint)
-    val_dataloader = DataLoader(dataset, batch_size=64, num_workers=3)
+    dataloader = DataLoader(dataset, batch_size=64, num_workers=3)
 
     trainer = pl.Trainer(deterministic=True, 
         logger=wandb_logger, 
         distributed_backend='dp',
-        gpus=[5,7])
-    result_dict = trainer.test(model = model, test_dataloaders = val_dataloader)
+        gpus=[2,3])
+    result_dict = trainer.test(model = model, test_dataloaders = dataloader)
     return result_dict
 
 if __name__ == "__main__":

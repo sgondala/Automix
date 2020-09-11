@@ -17,10 +17,7 @@ from FastAutoAugment.read_data import *
 
 class BertBasedClassifier(LightningModule):
     def __init__(self, model_name='distilbert-base-uncased', num_labels=4):
-        print('Model name ', model_name)
-        print('num_labels ', num_labels)
         super().__init__()
-        print(model_name, num_labels)
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_name, num_labels=num_labels)
         self.save_hyperparameters()
@@ -30,7 +27,7 @@ class BertBasedClassifier(LightningModule):
         return out
     
     def training_step(self, batch, batch_idx):
-        inputs, attention_mask, labels, lengths = batch
+        inputs, attention_mask, labels, _ = batch
         out = self({'input_ids':inputs, 'attention_mask':attention_mask}, labels)
         loss = out[0]
         logits = out[1]

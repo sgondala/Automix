@@ -62,17 +62,11 @@ def get_datasets(data_path,
     return train_dataset, val_dataset, n_labels
 
 class create_dataset(Dataset):
-    def __init__(self, dataset_text, dataset_label, tokenizer_type, max_seq_len=256, aug=False):
+    def __init__(self, dataset_text, dataset_label, tokenizer_type, max_seq_len=256):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
         self.labels = dataset_label
         self.max_seq_len = max_seq_len
-
-        self.aug = aug
-        self.trans_dist = {}
-
-        if aug:
-            assert False
 
     def __len__(self):
         return len(self.labels)
