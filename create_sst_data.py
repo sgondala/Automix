@@ -31,7 +31,6 @@ for index in range(0, len(all_sentences)):
     else:
         all_test.append(all_sentences[index])
 
-
-subsampled_train = pd.DataFrame(random.sample(all_train, 0.01 * len(all_train)))
+subsampled_train = pd.DataFrame(random.sample(all_train, round(0.01 * len(all_train))))
 subsampled_val = pd.DataFrame(random.sample(all_val, 10))
-all_test = pd.DataFram(all_test)
+all_test = pd.DataFrame(all_test)
