@@ -53,5 +53,5 @@ if __name__ == "__main__":
                          #gpus=[1],
                          gradient_clip_val=0.5)
 
-    model = BertBasedClassifier(model_name=model_name, num_labels=10)
+    model = BertBasedClassifier(model_name=model_name, num_labels=2)
     trainer.fit(model, train_dataloader, val_dataloader)
