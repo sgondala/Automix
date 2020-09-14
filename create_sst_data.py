@@ -11,8 +11,6 @@ from FastAutoAugment.read_data import *
 import pickle
 from io import StringIO
 
-pos = 1
-neg = 0
 seed = 42
 
 with open('data/sst2/stsa.binary.train.txt', 'r') as file:
