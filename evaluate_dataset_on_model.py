@@ -48,3 +48,13 @@ if __name__ == "__main__":
         dataset = val_dataset
         )['val_accuracy']
     )
+
+def evaluate_sst2_dataset_on_model():
+    model_name = 'distilbert-base-uncased'
+    full_val_data = pickle.load(open('data/sst2/sst2_10_samples_val.pkl', 'rb'))
+    val_dataset = create_dataset(full_val_data['sentiment'], full_val_data['sentence'], model_name, 256)
+
+    print('Final accuracy ', evaluate_dataset_on_model(
+        wandb_name='test_full_sst2_model_no_aug',
+        checkpoint='checkpoints/sst2_classifier_baseline/lightning_logs/version_7/checkpoints/epoch=6.ckpt',
+        dataset=val_dataset)['val_accuracy'])
