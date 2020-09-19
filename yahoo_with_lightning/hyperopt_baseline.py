@@ -44,7 +44,7 @@ def optimization_function(args):
 
     # actual_X = np.array(val['X'])[indices]
     # actual_y = np.array(val['y'])[indices]
-    actual_X = val['X']
+    actual_x = val['X']
     actual_y = val['y']
     
     augmentations = [synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform]
@@ -52,32 +52,33 @@ def optimization_function(args):
     print('Probabilities ', probabilities)
     print('Number of data ', number_of_data)
 
-    all_aug_X = []
+    all_aug_x = []
     all_aug_y = []
 
     for i in range(len(augmentations)):
         # print(f'Creating dataset {i}')
-        new_X, new_y = create_augmented_dataset(actual_X, actual_y, augmentations[i], probabilities[i], number_of_data[i])
-        all_aug_X += new_X
+        new_X, new_y = create_augmented_dataset(actual_x, actual_y, augmentations[i], probabilities[i], number_of_data[i])
+        all_aug_x += new_X
         all_aug_y += new_y
 
-    all_aug_X += actual_X.tolist()
+    all_aug_x += actual_x.tolist()
     all_aug_y += actual_y.tolist()
 
     # print('Length of dataset ', len(actual_X))
 
     # val_dataset = create_dataset(actual_X, actual_y, model_name, 256)
-    val_dataset = create_dataset(all_aug_X, all_aug_y, model_name, 256)
+    val_dataset = create_dataset(all_aug_x, all_aug_y, model_name, 256)
 
-    wandb_name = 'hyperopt_experiments_yahoo_0.2_percent_with_original_'
+    wandb_name = 'hyperopt_experiments_yahoo_0.2_percent_with_original_random_distilbert_'
     for i in range(len(augmentations)):
         wandb_name += str(probabilities[i]) + '_' + str(number_of_data[i]) + '_'
 
     # print('Before evaluate ')
     val_accuracy = evaluate_dataset_on_model(
         wandb_name = wandb_name, 
-        checkpoint = 'checkpoints/yahoo_answers_0.2_base_train/autoaugment/2h91rmje/checkpoints/epoch=3.ckpt',
+        checkpoint = 'checkpoints/yahoo_answers_0.2_base_train_random_distilbert/autoaugment/1qu8eci3/checkpoints/epoch=60.ckpt',
         dataset = val_dataset,
+        model_type = 'RandomDistilBertClassifier'
     )[0]['val_accuracy']
 
     return -val_accuracy # - because we're minimizing

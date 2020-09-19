@@ -62,16 +62,19 @@ def get_datasets(data_path,
     return train_dataset, val_dataset, n_labels
 
 class create_dataset(Dataset):
-    def __init__(self, dataset_text, dataset_label, tokenizer_type, max_seq_len=256):
+    def __init__(self, dataset_text, dataset_label, 
+            tokenizer_type, max_seq_len=256, mix=None, num_classes=10):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
         self.labels = dataset_label
         self.max_seq_len = max_seq_len
+        self.mix = mix
+        self.num_classes = num_classes
 
     def __len__(self):
         return len(self.labels)
 
-    def __getitem__(self, idx):
+    def prepare_data(self, idx):
         text = self.text[idx]
         tokens = self.tokenizer.tokenize(text)
         if len(tokens) > self.max_seq_len:
@@ -85,6 +88,31 @@ class create_dataset(Dataset):
                 torch.tensor(attention_mask),
                 self.labels[idx], 
                 length)
+    
+    def __getitem__(self, idx):
+        data_for_idx = self.prepare_data(idx)
+        if self.mix is None:
+            return data_for_idx
+        if self.mix == 'TMix':
+            
+            random_index = np.random.randint(0, len(self.labels))
+            data_for_random_idx = self.prepare_data(random_index)
+
+            # Combine both
+            label_1 = [0]*self.num_classes
+            label_1[data_for_idx[2]] = 1
+            label_2 = [0]*self.num_classes
+            label_2[data_for_random_idx[2]] = 1
+
+            encoded_1 = data_for_idx[0]
+            encoded_2 = data_for_random_idx[0]
+            # length = max(data_for_idx[3], data_for_random_idx[3])
+            # attention_mask_1 = data_for_idx[1]
+            # attention_mask_2 = data_for_random_idx[1]
+            return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
+        else:
+            assert False
+
 
 if __name__ == '__main__':
     pass
