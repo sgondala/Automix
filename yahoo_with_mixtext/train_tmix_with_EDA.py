@@ -28,9 +28,9 @@ parser.add_argument('--batch-size', default=4, type=int, metavar='N',
 parser.add_argument('--batch-size-u', default=24, type=int, metavar='N',
                     help='train batchsize')
 
-parser.add_argument('--lrmain', '--learning-rate-bert', default=5e-6, type=float,
+parser.add_argument('--lrmain', '--learning-rate-bert', default=2e-5, type=float,
                     metavar='LR', help='initial learning rate for bert')
-parser.add_argument('--lrlast', '--learning-rate-model', default=1e-4, type=float,
+parser.add_argument('--lrlast', '--learning-rate-model', default=1e-3, type=float,
                     metavar='LR', help='initial learning rate for models')
 
 parser.add_argument('--gpu', default='0,1,2,3', type=str,
@@ -70,18 +70,6 @@ parser.add_argument('--mix-layers', nargs='+',
 parser.add_argument('--alpha', default=16, type=float,
                     help='alpha for beta distribution')
 
-parser.add_argument('--lambda-u', default=1, type=float,
-                    help='weight for consistency loss term of unlabeled data')
-parser.add_argument('--T', default=0.5, type=float,
-                    help='temperature for sharpen function')
-
-parser.add_argument('--temp-change', default=1000000, type=int)
-
-parser.add_argument('--margin', default=0.7, type=float, metavar='N',
-                    help='margin for hinge loss')
-parser.add_argument('--lambda-u-hinge', default=0, type=float,
-                    help='weight for hinge loss term of unlabeled data')
-
 args = parser.parse_args()
 
 # Seeds
@@ -99,8 +87,9 @@ def own_loss(logits, target, num_labels):
 
 if __name__ == "__main__":
     wandb.init(project="auto_augment")
+    wandb.config.update(args)
     
-    run_name = 'train_yahoo_on_mixtext_10_per_class_tmix'
+    run_name = 'train_yahoo_on_mixtext_10_per_class_tmix_with_eda'
     wandb.run.name = run_name
     wandb.run.save()
 
@@ -110,7 +99,7 @@ if __name__ == "__main__":
     model_name = 'bert-base-uncased'
 
     train_dataset = create_dataset(
-        train['X'], train['y'], model_name, 256, mix='TMix', num_classes=10)
+        train['X'], train['y'], model_name, 256, mix='TMix_with_EDA', num_classes=10, alpha=0.2)
     val_dataset = create_dataset(val['X'], val['y'], model_name, 256, mix=None)
 
     train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3, shuffle=True)
@@ -156,6 +145,7 @@ if __name__ == "__main__":
             'lr_bert':lr_scheduler.get_lr()[0], 
             'lr_linear':lr_scheduler.get_lr()[1]}
         )
+
         if epoch <= 15:
             lr_scheduler.step()
         

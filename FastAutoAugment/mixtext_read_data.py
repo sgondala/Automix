@@ -36,33 +36,33 @@ def get_data(data_path, n_labeled_per_class, unlabeled_per_class=5000, max_seq_l
         train_aug {bool} -- Whether performing augmentation on labeled training set (default: {False})
     """
     # Load the tokenizer for bert
-    tokenizer = BertTokenizer.from_pretrained(model)
+    # tokenizer = BertTokenizer.from_pretrained(model)
 
-    train_df = pd.read_csv(data_path+'train.csv', header=None)
+    # train_df = pd.read_csv(data_path+'train.csv', header=None)
     test_df = pd.read_csv(data_path+'test.csv', header=None)
 
     # Here we only use the bodies and removed titles to do the classifications
-    train_labels = np.array([v-1 for v in train_df[0]])
-    train_text = np.array([v for v in train_df[2]])
+    # train_labels = np.array([v-1 for v in train_df[0]])
+    # train_text = np.array([v for v in train_df[2]])
 
     test_labels = np.array([u-1 for u in test_df[0]])
     test_text = np.array([v for v in test_df[2]])
 
-    n_labels = max(test_labels) + 1
+    # n_labels = max(test_labels) + 1
 
     # Split the labeled training set, unlabeled training set, development set
-    train_labeled_idxs, _, val_idxs = train_val_split(
-        train_labels, n_labeled_per_class, unlabeled_per_class, n_labels)
+    # train_labeled_idxs, _, val_idxs = train_val_split(
+    #     train_labels, n_labeled_per_class, unlabeled_per_class, n_labels)
 
-    val_data = {}
-    val_data['X'] = train_text[val_idxs]
-    val_data['y'] = train_labels[val_idxs]
+    test_data = {}
+    test_data['X'] = test_text
+    test_data['y'] = test_labels
     
 
-    print(len(train_labeled_idxs))
-    print(len(val_idxs))
+    # print(len(train_labeled_idxs))
+    print(len(test_labels))
 
-    return val_data
+    return test_data
 
     # # Build the dataset class for each set
     # train_labeled_dataset = loader_labeled(
@@ -77,7 +77,7 @@ def get_data(data_path, n_labeled_per_class, unlabeled_per_class=5000, max_seq_l
     # print("#Labeled: {}, Unlabeled {}, Val {}, Test {}".format(len(
     #     train_labeled_idxs), len(train_unlabeled_idxs), len(val_idxs), len(test_labels)))
 
-    return train_labeled_dataset, train_unlabeled_dataset, val_dataset, test_dataset, n_labels
+    # return train_labeled_dataset, train_unlabeled_dataset, val_dataset, test_dataset, n_labels
 
 
 def train_val_split(labels, n_labeled_per_class, unlabeled_per_class, n_labels, seed=0):
@@ -222,5 +222,5 @@ class loader_unlabeled(Dataset):
             return (torch.tensor(encode_result), length)
 
 if __name__ == '__main__':
-    val_data = get_data('/nethome/sgondala3/Automix/data/paper_yahoo_split/yahoo_answers_csv/', 10, 0)
-    pickle.dump(val_data, open('yahoo_val_500_per_class.pkl', 'wb'))
+    test_data = get_data('/nethome/sgondala3/Automix/data/paper_yahoo_split/yahoo_answers_csv/', 10, 0)
+    pickle.dump(test_data, open('yahoo_test.pkl', 'wb'))
