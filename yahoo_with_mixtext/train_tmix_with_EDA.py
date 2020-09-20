@@ -23,52 +23,19 @@ parser = argparse.ArgumentParser(description='PyTorch MixText')
 
 parser.add_argument('--epochs', default=50, type=int, metavar='N',
                     help='number of total epochs to run')
-parser.add_argument('--batch-size', default=4, type=int, metavar='N',
-                    help='train batchsize')
-parser.add_argument('--batch-size-u', default=24, type=int, metavar='N',
-                    help='train batchsize')
 
 parser.add_argument('--lrmain', '--learning-rate-bert', default=2e-5, type=float,
                     metavar='LR', help='initial learning rate for bert')
 parser.add_argument('--lrlast', '--learning-rate-model', default=1e-3, type=float,
                     metavar='LR', help='initial learning rate for models')
 
-parser.add_argument('--gpu', default='0,1,2,3', type=str,
-                    help='id(s) for CUDA_VISIBLE_DEVICES')
-
-parser.add_argument('--n-labeled', type=int, default=20,
-                    help='number of labeled data')
-
-parser.add_argument('--un-labeled', default=5000, type=int,
-                    help='number of unlabeled data')
-
-parser.add_argument('--val-iteration', type=int, default=200,
-                    help='number of labeled data')
-
-
-parser.add_argument('--mix-option', default=True, type=bool, metavar='N',
-                    help='mix option, whether to mix or not')
-parser.add_argument('--mix-method', default=0, type=int, metavar='N',
-                    help='mix method, set different mix method')
-parser.add_argument('--separate-mix', default=False, type=bool, metavar='N',
-                    help='mix separate from labeled data and unlabeled data')
-parser.add_argument('--co', default=False, type=bool, metavar='N',
-                    help='set a random choice between mix and unmix during training')
-parser.add_argument('--train_aug', default=False, type=bool, metavar='N',
-                    help='augment labeled training data')
-
-
-parser.add_argument('--model', type=str, default='bert-base-uncased',
-                    help='pretrained model')
-
-parser.add_argument('--data-path', type=str, default='yahoo_answers_csv/',
-                    help='path to data folders')
-
 parser.add_argument('--mix-layers', nargs='+',
                     default=[7,9,12], type=int, help='define mix layer set')
 
-parser.add_argument('--alpha', default=16, type=float,
+parser.add_argument('--alpha', default=2, type=float,
                     help='alpha for beta distribution')
+
+parser.add_argument('--eda-probability', default=0.2, type=float)
 
 args = parser.parse_args()
 
@@ -99,7 +66,7 @@ if __name__ == "__main__":
     model_name = 'bert-base-uncased'
 
     train_dataset = create_dataset(
-        train['X'], train['y'], model_name, 256, mix='TMix_with_EDA', num_classes=10, alpha=0.2)
+        train['X'], train['y'], model_name, 256, mix='TMix_with_EDA', num_classes=10, alpha=args.eda_probability)
     val_dataset = create_dataset(val['X'], val['y'], model_name, 256, mix=None)
 
     train_dataloader = DataLoader(train_dataset, batch_size=32, num_workers=3, shuffle=True)
@@ -128,6 +95,7 @@ if __name__ == "__main__":
             
             mix_layer = np.random.choice(args.mix_layers)
             l = np.random.beta(args.alpha, args.alpha)
+            l = max(l, 1-l)
             
             logits = model(encoded_1.cuda(), encoded_2.cuda(), l, mix_layer)
             # print('Logits ', logits)
@@ -179,4 +147,4 @@ if __name__ == "__main__":
             checkpoint_path = f'checkpoints/{run_name}/'
             if not os.path.isdir(checkpoint_path):
                 os.makedirs(checkpoint_path)
-            torch.save(model.state_dict(), f'{checkpoint_path}/model_best.pth')
+            torch.save(model, f'{checkpoint_path}/model_best.pth')

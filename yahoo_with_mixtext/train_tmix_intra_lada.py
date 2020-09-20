@@ -24,15 +24,15 @@ parser = argparse.ArgumentParser(description='PyTorch MixText')
 parser.add_argument('--epochs', default=50, type=int, metavar='N',
                     help='number of total epochs to run')
 
-parser.add_argument('--lrmain', '--learning-rate-bert', default=5e-6, type=float,
+parser.add_argument('--lrmain', '--learning-rate-bert', default=1e-5, type=float,
                     metavar='LR', help='initial learning rate for bert')
-parser.add_argument('--lrlast', '--learning-rate-model', default=5e-4, type=float,
+parser.add_argument('--lrlast', '--learning-rate-model', default=1e-3, type=float,
                     metavar='LR', help='initial learning rate for models')
 
 parser.add_argument('--mix-layers', nargs='+',
-                    default=[7,9,12], type=int, help='define mix layer set')
+                    default=[12], type=int, help='define mix layer set')
 
-parser.add_argument('--alpha', default=0.5, type=float,
+parser.add_argument('--alpha', default=2, type=float,
                     help='alpha for beta distribution')
 
 parser.add_argument('--lr-decay', default=0.98, type=float,
@@ -61,17 +61,17 @@ if __name__ == "__main__":
     wandb.init(project="auto_augment")
     wandb.config.update(args)
     
-    run_name = 'train_yahoo_on_mixtext_200_per_class_tmix'
+    run_name = 'train_yahoo_on_mixtext_10_per_class_tmix_intra_lada'
     wandb.run.name = run_name
     wandb.run.save()
 
-    train = pickle.load(open('data/paper_yahoo_split/yahoo_train_200_per_class.pkl', 'rb'))
+    train = pickle.load(open('data/paper_yahoo_split/yahoo_train_10_per_class.pkl', 'rb'))
     val = pickle.load(open('data/paper_yahoo_split/yahoo_val_200_per_class.pkl', 'rb'))
 
     model_name = 'bert-base-uncased'
 
     train_dataset = create_dataset(
-        train['X'], train['y'], model_name, 256, mix='TMix', num_classes=10)
+        train['X'], train['y'], model_name, 256, mix='Intra_LADA', num_classes=10)
     val_dataset = create_dataset(val['X'], val['y'], model_name, 256, mix=None)
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=3, shuffle=True)
