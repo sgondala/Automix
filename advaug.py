@@ -1,9 +1,10 @@
 import numpy as np
 import torch
-from sklearn.metrics.pairwise import cosine_similarity
+from scipy.spatial.distance import cosine
+# pip install fastBPE regex requests sacremoses subword_nmt
 
 
-def advgen(input, translation_loss=0, sampling_ratio=0.05, d_model=512):
+def advaug(input, translation_loss=0.2, sampling_ratio=0.5):
     # Tokenize input and generate positions to create perturbations for
     words = input.split()
     random_raw_indexes = np.random.uniform(0, len(words) - 1, round(sampling_ratio * len(words)))
@@ -24,28 +25,52 @@ def advgen(input, translation_loss=0, sampling_ratio=0.05, d_model=512):
     for index in range(0, len(words)):
         if index in positions:
             # Calculate vocab list for word
-            en_bpe = en2de.apply_bpe(words[index])
-            en_bin = en2de.binarize(en_bpe)
-            de_bin = en2de.generate(en_bin, beam=5, sampling=True, sampling_topk=10)
-            de_tokens = de_bin['tokens']
+            en_binarized_word = en2de.binarize(en2de.apply_bpe(words[index]))
+            de_word = en2de.translate(words[index])
+            en_binarized_perturbations = de2en.generate(de2en.binarize(de2en.apply_bpe(de_word)), beam=10,
+                                                        sampling=True, sampling_topk=10)
+            vocab_with_dupes = []
+            for i, en_binarized_perturbation in enumerate(en_binarized_perturbations):
+                en_perturbation = de2en.decode(en_binarized_perturbations[i]['tokens'])
+                vocab_with_dupes.append(en_perturbation)
             vocab = []
-            for perturbation in de_tokens:
-                de_bpe = en2de.string(perturbation)
-                de_tokens = en2de.remove_bpe(de_bpe)
-                perturbation = en2de.detokenize(de_tokens) # en2de.decode(de_word)
-                vocab.append(perturbation)
-            if words[index] in vocab:
-                vocab.remove(words[index])
+            for i, word in enumerate(vocab_with_dupes):
+                if words[index].lower() != word.lower():
+                    if len(word.split()) <= 3:
+                        if word != '"' and word != '\'':
+                            vocab.append(vocab_with_dupes[i].lower())
 
             # Calculate gradient for word
-            gradient = np.gradient(en_bin) * translation_loss
+            gradient = np.gradient(en_binarized_word) * translation_loss
 
             # Calculate optimal adversarial perturbation for word
-            all_perturbations = []
-            for perturbation in vocab:
-                perturbation_encoding = en2de.binarize(en2de.apply_bpe(perturbation))
-                all_perturbations.append(cosine_similarity((perturbation_encoding - en_bin), gradient))
-            output_words.append(vocab[np.argmax(all_perturbations)])
+            perturbation_scores = {}
+            for i, perturbation in enumerate(vocab):
+                binarized_perturbation = en2de.binarize(en2de.apply_bpe(perturbation))
+
+                # Attempted padding
+                """size_diff = len(binarized_perturbation) - len(en_binarized_word)
+                print(size_diff)
+                if size_diff > 0:
+                    padding = torch.zeros(size_diff)
+                    en_binarized_word_padded = np.concatenate((en_binarized_word.numpy(), padding.numpy()), axis=None)
+                    perturbation_scores[i] = 1 - cosine((torch.sub(binarized_perturbation, torch.from_numpy(en_binarized_word_padded))).tolist(), gradient.tolist())
+                elif size_diff < 0:
+                    padding = torch.zeros(-size_diff)
+                    binarized_perturbation_padded = np.concatenate((binarized_perturbation.numpy(), padding.numpy()), axis=None)
+                    perturbation_scores[i] = 1 - cosine((torch.sub(torch.from_numpy(binarized_perturbation_padded), en_binarized_word)).tolist(), gradient.tolist())
+                else:
+                    perturbation_scores[i] = 1 - cosine((torch.sub(binarized_perturbation, en_binarized_word)).tolist(), gradient.tolist())"""
+
+                if len(binarized_perturbation) == len(en_binarized_word):
+                    perturbation_scores[i] = 1 - cosine((torch.sub(binarized_perturbation, en_binarized_word)).tolist(),
+                                                        gradient.tolist())
+            if len(perturbation_scores) != 0:
+                output_words.append(vocab[max(perturbation_scores, key=perturbation_scores.get)])
+                # output_words.append(vocab[np.argmax(perturbation_scores)])
+            else:
+                output_words.append(words[index])
+
         else:
             # If words were not selected to be replaced, return the original words
             output_words.append(words[index])
@@ -58,4 +83,3 @@ def advgen(input, translation_loss=0, sampling_ratio=0.05, d_model=512):
     return output
 
 
-print(advgen(input='This is a test sentence with lots and lots of words in it.'))
