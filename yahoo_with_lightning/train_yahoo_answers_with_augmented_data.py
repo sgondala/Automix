@@ -42,10 +42,14 @@ if __name__ == "__main__":
     # best_num_of_data = [1, 2, 1, 2]
 
     # EDA paper values for yahoo 0.2%
-    best_probabilities = [0.05]*4
-    best_num_of_data = [8]*4
+    # best_probabilities = [0.05]*4
+    # best_num_of_data = [8]*4
 
-    wandb_name = 'train_yahoo_answers_0.2_percent_model_'
+    # Values for yahoo 0.2% on untrained distilbert
+    best_probabilities = [0.31, 0.04, 0.14, 0.01]
+    best_num_of_data = [1, 8, 1, 4]
+
+    wandb_name = 'train_augmented_yahoo_answers_0.2_random_distilbert_'
     for i in range(len(augmentations)):
         wandb_name += str(best_probabilities[i]) + '_' + str(best_num_of_data[i]) + '_'
     
@@ -84,7 +88,7 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(train_dataset, batch_size=128, num_workers=4, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=128, num_workers=4, shuffle=False)
 
-    early_stopping = EarlyStopping('val_accuracy', patience=3, mode='max')
+    early_stopping = EarlyStopping('val_accuracy', patience=5, mode='max')
     model_checkpoint = ModelCheckpoint( 
         monitor='val_accuracy',
         mode='max',
@@ -95,9 +99,12 @@ if __name__ == "__main__":
         logger=wandb_logger,
         early_stop_callback=early_stopping,
         distributed_backend='dp',
-        gpus=[4,5],
+        gpus=[4,5,6,7],
         gradient_clip_val=0.5,
-        num_sanity_val_steps=-1)
+        num_sanity_val_steps=-1,
+        # min_epochs=100
+    )
 
-    model = BertBasedClassifier(model_name=model_name, num_labels=10)
+    # model = BertBasedClassifier(model_name=model_name, num_labels=10)
+    model = RandomDistilBertClassifier(num_labels=10, lr=1e-6)
     trainer.fit(model, train_dataloader, val_dataloader)
