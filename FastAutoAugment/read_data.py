@@ -109,6 +109,7 @@ class create_dataset(Dataset):
         data_for_idx = self.prepare_data(idx)
         if self.mix is None:
             return data_for_idx
+        
         if self.mix == 'TMix':
             random_index = np.random.randint(0, len(self.labels))
             data_for_random_idx = self.prepare_data(random_index)
@@ -136,7 +137,18 @@ class create_dataset(Dataset):
             label_1[data_for_idx[2]] = 1
             # label_2 = label_1.copy()
             return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
-
+        
+        if self.mix == 'Intra_LADA':
+            # Permute the sentence
+            sentence_split = np.array(self.text[idx].split(' '))
+            permutation = np.random.permutation(range(len(sentence_split)))
+            sentence_split_new = sentence_split[permutation]
+            augmented_sentence = ' '.join(sentence_split_new)
+            encoded_1 = data_for_idx[0]
+            encoded_2, _ = self.encode_text(augmented_sentence)
+            label_1 = [0]*self.num_classes
+            label_1[data_for_idx[2]] = 1
+            return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
         assert False
 
 
