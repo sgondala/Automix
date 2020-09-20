@@ -50,7 +50,7 @@ if __name__ == "__main__":
                          early_stop_callback=early_stopping,
                          checkpoint_callback=model_checkpoint,
                          # distributed_backend='dp',
-                         #gpus=[1],
+                         # gpus=[1],
                          gradient_clip_val=0.5)
 
     model = BertBasedClassifier(model_name=model_name, num_labels=2)

@@ -10,6 +10,7 @@ from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.nlp_augmentations import synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform
 import spacy_sentence_bert
 from tqdm import tqdm
+from advaug import advaug;
 import pickle
 from os import path
 
@@ -203,6 +204,9 @@ class create_dataset(Dataset):
             # attention_mask_1 = data_for_idx[1]
             # attention_mask_2 = data_for_random_idx[1]
             return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
+
+        if self.mix == 'AdvAug':
+            return advaug(self.text)
         assert False
 
 
