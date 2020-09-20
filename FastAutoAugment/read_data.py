@@ -8,6 +8,10 @@ import pickle
 from sklearn.model_selection import train_test_split
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
 from FastAutoAugment.nlp_augmentations import synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform
+import spacy_sentence_bert
+from tqdm import tqdm
+import pickle
+from os import path
 
 def read_csv_and_return_x_y(data_path, dataset_type='ag_news'): 
     train_df = pd.read_csv(data_path, header=None)
@@ -62,9 +66,26 @@ def get_datasets(data_path,
 
     return train_dataset, val_dataset, n_labels
 
+def get_closest_neighbors(dataset_text):
+    all_similarities = []
+    sentence_bert_model = spacy_sentence_bert.load_model('en_bert_base_nli_mean_tokens')
+    for i in tqdm(range(len(dataset_text))):
+        similarities_for_i = []
+        for j in range(len(dataset_text)):
+            if i==j:
+                continue
+            string_1 = sentence_bert_model(str(dataset_text[i]))
+            string_2 = sentence_bert_model(str(dataset_text[j]))
+            similarity = string_1.similarity(string_2)
+            similarities_for_i.append((similarity, j))
+        similarities_for_i.sort(reverse=True)
+        similarities_for_i = [item[1] for item in similarities_for_i]
+        all_similarities.append(similarities_for_i)
+    return all_similarities
+
 class create_dataset(Dataset):
     def __init__(self, dataset_text, dataset_label, 
-            tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1):
+            tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1, knn_lada=3, mu_lada=0.5):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
         self.labels = dataset_label
@@ -75,6 +96,17 @@ class create_dataset(Dataset):
             assert alpha != -1, 'Assign alpha with TMix_with_EDA'
             self.augmentations = [synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform]
             self.alpha = alpha
+        if mix == 'Inter_LADA':
+            similarity_file = 'data/computed_data/Intra_LADA_for_10_per_class_yahoo.pkl'
+            if path.exists(similarity_file):
+                print("Using precomputed close neighbors")
+                self.close_neighbors = pickle.load(open(similarity_file, 'rb'))
+            else:
+                print("Creating close neighbors")
+                self.close_neighbors = get_closest_neighbors(dataset_text)
+                pickle.dump(self.close_neighbors, open(similarity_file, 'wb'))
+            self.knn_lada = knn_lada
+            self.mu_lada = mu_lada
 
     def __len__(self):
         return len(self.labels)
@@ -149,6 +181,28 @@ class create_dataset(Dataset):
             label_1 = [0]*self.num_classes
             label_1[data_for_idx[2]] = 1
             return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
+        if self.mix == 'Inter_LADA':
+            random_index = None
+            similar_indices = self.close_neighbors[idx]
+            if np.random.rand() < self.mu_lada:
+                random_index = np.random.choice(similar_indices[:self.knn_lada])
+            else:
+                random_index = np.random.choice(similar_indices[self.knn_lada:])
+            
+            data_for_random_idx = self.prepare_data(random_index)
+
+            # Combine both
+            label_1 = [0]*self.num_classes
+            label_1[data_for_idx[2]] = 1
+            label_2 = [0]*self.num_classes
+            label_2[data_for_random_idx[2]] = 1
+
+            encoded_1 = data_for_idx[0]
+            encoded_2 = data_for_random_idx[0]
+            # length = max(data_for_idx[3], data_for_random_idx[3])
+            # attention_mask_1 = data_for_idx[1]
+            # attention_mask_2 = data_for_random_idx[1]
+            return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
         assert False
 
 

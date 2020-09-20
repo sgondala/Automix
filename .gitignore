@@ -111,3 +111,5 @@ wandb/
 out/
 *pkl
 *pth
+
+bash_script.sh
