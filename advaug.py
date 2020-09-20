@@ -4,7 +4,7 @@ from scipy.spatial.distance import cosine
 # pip install fastBPE regex requests sacremoses subword_nmt
 
 
-def advaug(input, translation_loss=0.2, sampling_ratio=0.5):
+def advaug(input, translation_loss=0.2, sampling_ratio=0.25):
     # Tokenize input and generate positions to create perturbations for
     words = input.split()
     random_raw_indexes = np.random.uniform(0, len(words) - 1, round(sampling_ratio * len(words)))
