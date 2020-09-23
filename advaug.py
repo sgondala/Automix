@@ -82,4 +82,6 @@ def advaug(input, translation_loss=0.2, sampling_ratio=0.25):
     output = output[:-1]
     return output
 
-
+if __name__ == '__main__':
+    text = "Consider an imaginary elephant in the room which is of size 100 x 100 and weight 10,000 pounds which does nothing but sit and eat and sleep"
+    print(advaug(text))
