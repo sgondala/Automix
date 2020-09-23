@@ -87,13 +87,15 @@ def get_closest_neighbors(dataset_text):
 class create_dataset(Dataset):
     def __init__(self, dataset_text, dataset_label, 
             tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1, knn_lada=3, mu_lada=0.5, 
-            translation_loss = 0.2, sampling_ratio = 0.25):
+            translation_loss = 0.2, sampling_ratio = 0.25, probability_of_application = 1):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
         self.labels = dataset_label
         self.max_seq_len = max_seq_len
         self.mix = mix
         self.num_classes = num_classes
+        self.probability_of_application = probability_of_application
+
         if mix == 'TMix_with_EDA':
             assert alpha != -1, 'Assign alpha with TMix_with_EDA'
             self.augmentations = [synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform]
@@ -157,6 +159,13 @@ class create_dataset(Dataset):
         if self.mix is None:
             return data_for_idx
         
+        if np.random.rand() > self.probability_of_application:
+            # Probability of applying the augmentation, useful for FastAutoAugment
+            encoded_1 = data_for_idx[0]
+            label_1 = [0]*self.num_classes
+            label_1[data_for_idx[2]] = 1
+            return (encoded_1, encoded_1, torch.Tensor(label_1), torch.Tensor(label_1))
+
         if self.mix == 'TMix':
             random_index = np.random.randint(0, len(self.labels))
             data_for_random_idx = self.prepare_data(random_index)

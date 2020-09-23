@@ -169,7 +169,7 @@ def add_word(new_words):
     random_idx = random.randint(0, len(new_words)-1)
     new_words.insert(random_idx, random_synonym)
 
-def synonym_replacement_transform(sentence, alpha, num_augmentations):
+def synonym_replacement_transform(sentence, alpha, num_augmentations=1):
     sentence = get_only_chars(sentence)
     words = sentence.split(' ')
     words = [word for word in words if word is not '']
@@ -184,7 +184,7 @@ def synonym_replacement_transform(sentence, alpha, num_augmentations):
     
     return augmented_sentences
 
-def random_insertion_transform(sentence, alpha, num_augmentations):
+def random_insertion_transform(sentence, alpha, num_augmentations=1):
     sentence = get_only_chars(sentence)
     words = sentence.split(' ')
     words = [word for word in words if word is not '']
@@ -200,7 +200,7 @@ def random_insertion_transform(sentence, alpha, num_augmentations):
     return augmented_sentences
 
 
-def random_swap_transform(sentence, alpha, num_augmentations):
+def random_swap_transform(sentence, alpha, num_augmentations=1):
     sentence = get_only_chars(sentence)
     words = sentence.split(' ')
     words = [word for word in words if word is not '']
@@ -215,7 +215,7 @@ def random_swap_transform(sentence, alpha, num_augmentations):
     
     return augmented_sentences
 
-def random_deletion_transform(sentence, alpha, num_augmentations):
+def random_deletion_transform(sentence, alpha, num_augmentations=1):
     sentence = get_only_chars(sentence)
     words = sentence.split(' ')
     words = [word for word in words if word is not '']
