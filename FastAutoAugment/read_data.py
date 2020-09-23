@@ -118,9 +118,9 @@ class create_dataset(Dataset):
                 self.adverserial_sentences = pickle.load(open(adv_aug_sentences, 'rb'))
             else:
                 print("Creating adv augmentations")
-                self.adverserial_sentences = []
-                for sentence in self.text:
-                    self.adverserial_sentences.append(advaug(sentence, translation_loss, sampling_ratio))
+                # print(type(dataset_text))
+                self.adverserial_sentences = advaug(dataset_text.tolist(), translation_loss, sampling_ratio)
+                assert len(self.adverserial_sentences) == len(dataset_text)
                 pickle.dump(self.adverserial_sentences, open(adv_aug_sentences, 'wb'))
 
     def __len__(self):
