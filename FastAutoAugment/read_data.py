@@ -206,7 +206,13 @@ class create_dataset(Dataset):
             return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
 
         if self.mix == 'AdvAug':
-            return advaug(self.text)
+            augmented_sentence = advaug(self.text)
+            encoded_1 = data_for_idx[0]
+            encoded_2, _ = self.encode_text(augmented_sentence)
+            label_1 = [0] * self.num_classes
+            label_1[data_for_idx[2]] = 1
+            # label_2 = label_1.copy()
+            return encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1)
         assert False
 
 
