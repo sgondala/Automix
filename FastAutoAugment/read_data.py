@@ -86,7 +86,8 @@ def get_closest_neighbors(dataset_text):
 
 class create_dataset(Dataset):
     def __init__(self, dataset_text, dataset_label, 
-            tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1, knn_lada=3, mu_lada=0.5):
+            tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1, knn_lada=3, mu_lada=0.5, 
+            translation_loss = 0.2, sampling_ratio = 0.25):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
         self.labels = dataset_label
@@ -108,6 +109,19 @@ class create_dataset(Dataset):
                 pickle.dump(self.close_neighbors, open(similarity_file, 'wb'))
             self.knn_lada = knn_lada
             self.mu_lada = mu_lada
+        if mix == 'TMix_with_AdvAug':
+            adv_aug_sentences = f'data/computed_data/adv_aug_{translation_loss}_{sampling_ratio}.pkl'
+            self.translation_loss = translation_loss
+            self.sampling_ratio = sampling_ratio
+            if path.exists(adv_aug_sentences):
+                print("Using precomputed adv augmentations")
+                self.adverserial_sentences = pickle.load(open(adv_aug_sentences, 'rb'))
+            else:
+                print("Creating adv augmentations")
+                self.adverserial_sentences = []
+                for sentence in self.text:
+                    self.adverserial_sentences.append(advaug(sentence, translation_loss, sampling_ratio))
+                pickle.dump(self.adverserial_sentences, open(adv_aug_sentences, 'wb'))
 
     def __len__(self):
         return len(self.labels)
@@ -206,14 +220,14 @@ class create_dataset(Dataset):
             # attention_mask_2 = data_for_random_idx[1]
             return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
 
-        if self.mix == 'AdvAug':
-            augmented_sentence = advaug(self.text)
+        if self.mix == 'TMix_with_AdvAug':
+            augmented_sentence = self.adverserial_sentences[idx]
             encoded_1 = data_for_idx[0]
             encoded_2, _ = self.encode_text(augmented_sentence)
             label_1 = [0] * self.num_classes
             label_1[data_for_idx[2]] = 1
             # label_2 = label_1.copy()
-            return encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1)
+            return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
         assert False
 
 

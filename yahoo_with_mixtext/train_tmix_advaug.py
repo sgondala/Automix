@@ -34,10 +34,6 @@ parser.add_argument('--mix-layers', nargs='+',
 
 parser.add_argument('--alpha', default=2, type=float,
                     help='alpha for beta distribution')
-parser.add_argument('--knn', default=3, type=int,
-                    help='alpha for beta distribution')
-parser.add_argument('--mu', default=0.5, type=float,
-                    help='alpha for beta distribution')
 
 parser.add_argument('--lr-decay', default=0.98, type=float,
                     help='alpha for beta distribution')
@@ -79,7 +75,8 @@ if __name__ == "__main__":
     model_name = 'bert-base-uncased'
 
     train_dataset = create_dataset(
-        train['X'], train['y'], model_name, 256, mix='TMix_with_AdvAug', num_classes=10)
+        train['X'], train['y'], model_name, 256, mix='TMix_with_AdvAug', \
+        num_classes=10, translation_loss = args.translation_loss, sampling_ratio = args.sampling_ratio)
     val_dataset = create_dataset(val['X'], val['y'], model_name, 256, mix=None)
 
     train_dataloader = DataLoader(train_dataset, batch_size=args.batch_size, num_workers=3, shuffle=True)
