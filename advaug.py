@@ -86,6 +86,12 @@ def advaug(inputs, translation_loss=0.2, sampling_ratio=0.25):
             output = output + word + ' '
         output = output[:-1]
         outputs.append(output)
+    
+    # Freeing cuda space
+    del en2de
+    del de2en
+    torch.cuda.empty_cache()
+    
     return outputs
 
 if __name__ == '__main__':
