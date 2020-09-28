@@ -14,11 +14,13 @@ import pandas as pd
 import numpy as np
 import transformers
 from transformers import AutoModelForSequenceClassification, AutoTokenizer
+
+from FastAutoAugment.classification_models.RandomDistilBertClassifier import RandomDistilBertClassifier
 from FastAutoAugment.read_data import *
 from FastAutoAugment.classification_models.TestClassifier import *
 from FastAutoAugment.classification_models.BertBasedClassifier import *
 from FastAutoAugment.nlp_augmentations import *
-from create_augmented_dataset import *
+from yahoo_with_lightning.create_augmented_dataset import create_augmented_dataset
 from evaluate_dataset_on_model import *
 
 import pickle
@@ -28,7 +30,7 @@ if __name__ == "__main__":
     seed_everything(42)
 
     augmentations = [synonym_replacement_transform, random_insertion_transform, random_swap_transform, random_deletion_transform]
-    
+
     # Best values for full yahoo
     # best_probabilities = [0.03527196847551313, 1.1168885841491075e-05, 0.24075230116982638, 0.3247342127244468]
     # best_num_of_data = [2, 8, 2, 1]
@@ -45,17 +47,17 @@ if __name__ == "__main__":
     best_probabilities = [0.05]*4
     best_num_of_data = [16]*4
 
-    wandb_name = 'train_yahoo_answers_0.2_percent_model_'
+    wandb_name = 'train_augmented_sst2_random_distilbert_'
     for i in range(len(augmentations)):
         wandb_name += str(best_probabilities[i]) + '_' + str(best_num_of_data[i]) + '_'
-    
+
     wandb_logger = WandbLogger(name=wandb_name, project='autoaugment')
 
-    train = pickle.load(open('data/sst2/sst2_1_percent_train.pkl', 'rb'))
-    val = pickle.load(open('data/sst2/sst2_10_samples_val.pkl', 'rb'))
+    train = pickle.load(open('../data/sst2/sst2_1_percent_train.pkl', 'rb'))
+    val = pickle.load(open('../data/sst2/sst2_10_samples_val.pkl', 'rb'))
 
-    actual_X = train['sentence'].tolist()
-    actual_y = train['sentiment'].tolist()
+    actual_X = train['X'].tolist()
+    actual_y = train['y'].tolist()
 
     all_aug_X = []
     all_aug_y = []
@@ -70,7 +72,7 @@ if __name__ == "__main__":
         all_aug_y += new_y
 
     print('Length of augmentations ', len(all_aug_X))
-    
+
     all_aug_X += actual_X
     all_aug_y += actual_y
 
@@ -84,20 +86,24 @@ if __name__ == "__main__":
     train_dataloader = DataLoader(train_dataset, batch_size=128, num_workers=4, shuffle=True)
     val_dataloader = DataLoader(val_dataset, batch_size=128, num_workers=4, shuffle=False)
 
-    early_stopping = EarlyStopping('val_accuracy', patience=3, mode='max')
-    model_checkpoint = ModelCheckpoint( 
+    early_stopping = EarlyStopping('val_accuracy', patience=5, mode='max')
+    model_checkpoint = ModelCheckpoint(
         monitor='val_accuracy',
         mode='max',
         save_top_k=1)
 
-    trainer = pl.Trainer(deterministic=True, 
-        weights_save_path=f'checkpoints/{wandb_name}/',
-        logger=wandb_logger,
-        early_stop_callback=early_stopping,
-        distributed_backend='dp',
-        gpus=[4,5],
-        gradient_clip_val=0.5,
-        num_sanity_val_steps=-1)
+    trainer = pl.Trainer(deterministic=True,
+                         weights_save_path=f'checkpoints/{wandb_name}/',
+                         logger=wandb_logger,
+                         early_stop_callback=early_stopping,
+                         distributed_backend='dp',
+                         gpus=None,
+                         #gpus=[4, 5, 6, 7],
+                         gradient_clip_val=0.5,
+                         num_sanity_val_steps=-1,
+                         # min_epochs=100
+                         )
 
-    model = BertBasedClassifier(model_name=model_name, num_labels=2)
+    # model = BertBasedClassifier(model_name=model_name, num_labels=2)
+    model = RandomDistilBertClassifier(num_labels=2, lr=1e-6)
     trainer.fit(model, train_dataloader, val_dataloader)
