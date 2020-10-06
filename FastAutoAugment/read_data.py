@@ -12,6 +12,8 @@ import spacy_sentence_bert
 from tqdm import tqdm
 from advaug import advaug;
 import pickle
+from sentence_transformers import SentenceTransformer
+import scipy
 from os import path
 
 def read_csv_and_return_x_y(data_path, dataset_type='ag_news'): 
@@ -67,21 +69,36 @@ def get_datasets(data_path,
 
     return train_dataset, val_dataset, n_labels
 
+# def get_closest_neighbors(dataset_text):
+#     all_similarities = []
+#     sentence_bert_model = spacy_sentence_bert.load_model('en_bert_base_nli_mean_tokens')
+#     for i in tqdm(range(len(dataset_text))):
+#         similarities_for_i = []
+#         for j in range(len(dataset_text)):
+#             if i==j:
+#                 continue
+#             string_1 = sentence_bert_model(str(dataset_text[i]))
+#             string_2 = sentence_bert_model(str(dataset_text[j]))
+#             similarity = string_1.similarity(string_2)
+#             similarities_for_i.append((similarity, j))
+#         similarities_for_i.sort(reverse=True)
+#         similarities_for_i = [item[1] for item in similarities_for_i]
+#         all_similarities.append(similarities_for_i)
+#     return all_similarities
+
 def get_closest_neighbors(dataset_text):
+    model = SentenceTransformer('bert-base-nli-mean-tokens')
+    sentence_embeddings = model.encode(dataset_text)
     all_similarities = []
-    sentence_bert_model = spacy_sentence_bert.load_model('en_bert_base_nli_mean_tokens')
     for i in tqdm(range(len(dataset_text))):
-        similarities_for_i = []
-        for j in range(len(dataset_text)):
-            if i==j:
-                continue
-            string_1 = sentence_bert_model(str(dataset_text[i]))
-            string_2 = sentence_bert_model(str(dataset_text[j]))
-            similarity = string_1.similarity(string_2)
-            similarities_for_i.append((similarity, j))
-        similarities_for_i.sort(reverse=True)
-        similarities_for_i = [item[1] for item in similarities_for_i]
-        all_similarities.append(similarities_for_i)
+        query_embedding = sentence_embeddings[i]
+        distances = scipy.spatial.distance.cdist([query_embedding], sentence_embeddings, "cosine")[0]
+        results = zip(range(len(distances)), distances)
+        results = sorted(results, key=lambda x: x[1])
+        results = [item[0] for item in results]
+        assert results[0] == i
+        results = results[1:]
+        all_similarities.append(results)
     return all_similarities
 
 class create_dataset(Dataset):
@@ -172,7 +189,7 @@ class create_dataset(Dataset):
         if self.mix is None:
             return data_for_idx
         
-        if np.random.rand() > self.probability_of_application:
+        if self.mix == 'duplicate' or np.random.rand() > self.probability_of_application:
             # Probability of applying the augmentation, useful for FastAutoAugment
             encoded_1 = data_for_idx[0]
             label_1 = [0]*self.num_classes
@@ -250,7 +267,7 @@ class create_dataset(Dataset):
             label_1[data_for_idx[2]] = 1
             # label_2 = label_1.copy()
             return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
-        assert False
+        assert False, self.mix
 
 
 if __name__ == '__main__':

@@ -1,4 +1,7 @@
 {
     "python.pythonPath": "/nethome/sgondala3/anaconda3/envs/automix/bin/python",
-    "python.linting.pylintArgs": ["--enable=E"]
+    "python.linting.pylintArgs": [
+        "--enable=E,F"
+    ],
+    "python.linting.enabled": false
 }

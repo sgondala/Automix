@@ -20,7 +20,7 @@ from hyperopt import fmin, tpe, hp, Trials
 
 parser = argparse.ArgumentParser(description='PyTorch MixText')
 
-parser.add_argument('--batch-size', default=8, type=int, metavar='N',
+parser.add_argument('--batch-size', default=64, type=int, metavar='N',
                     help='train batchsize')
 
 parser.add_argument('--checkpoint-path', type=str, default='checkpoints/train_yahoo_on_mixtext_10_per_class_no_augmentations/model_best.pth', help='Saved model checkpoint')
@@ -46,9 +46,9 @@ torch.backends.cudnn.deterministic = True
 functions = ['synonym_replacement', 'random_insert', 'random_swap', 'random_delete', 'inter_lada', 'intra_lada', 'random']
 function_name_to_tmix_functions_map = {
     'synonym_replacement': 'TMix_with_EDA_synonym_replacement',
-    'random_insert': 'TMix_with_EDA_random_insert',
+    'random_insert': 'TMix_with_EDA_random_insertion',
     'random_swap': 'TMix_with_EDA_random_swap',
-    'random_delete': 'TMix_with_EDA_random_delete',
+    'random_delete': 'TMix_with_EDA_random_deletion',
     'random': 'TMix',
     'intra_lada': 'Intra_LADA'
 }
@@ -64,13 +64,14 @@ def optimization_function(input_arguments):
 
     all_datasets = []
     
-    wandb.init(project="auto_augment")
-    wandb_name = 'test_yahoo_val_200_hyperopt_'
+    wandb.init(project="auto_augment", reinit=True)
+    wandb_name = 'test_yahoo_val_with_mixtext_200_hyperopt_'
 
     model_name = 'bert-base-uncased'
     dataset_identifier = 'val_200'
 
     for i in range(args.sub_policies_per_policy):
+        print(f'Generating dataset {i}')
         function_name = functions[int(input_arguments[next_input_arguments_index])]
         probability_of_application = input_arguments[next_input_arguments_index + 1]
         argument_1 = input_arguments[next_input_arguments_index + 2]
@@ -96,7 +97,7 @@ def optimization_function(input_arguments):
                 dataset_identifier = dataset_identifier)
         elif function_name == 'inter_lada':
             # 2 arguments
-            knn = int(argument_1 * 10)
+            knn = int(argument_1 * 10) + 1 # Making sure we have atleast k = 1
             mu = argument_2
             val_dataset = create_dataset(
                 val['X'], val['y'], model_name, 256, mix='Inter_LADA', num_classes=10,
@@ -107,6 +108,8 @@ def optimization_function(input_arguments):
 
         all_datasets.append(val_dataset)
     
+    print('Created datasets')
+
     wandb.run.name = wandb_name
     wandb.run.save()
 
@@ -120,7 +123,7 @@ def optimization_function(input_arguments):
         loss_total = 0
         total_sample = 0
 
-        for batch in tqdm(val_dataloader):
+        for batch in tqdm(val_dataloader, desc='Validation loop'):
             encoded_1, encoded_2, label_1, label_2 = batch
             assert encoded_1.shape == encoded_2.shape
             
@@ -134,7 +137,9 @@ def optimization_function(input_arguments):
             loss_total += loss.item() * encoded_1.shape[0]
             total_sample += encoded_1.shape[0]
         
+        loss_total = loss_total/total_sample
         wandb.log({'Test loss' : loss_total})
+        print('Test loss ', loss_total)
         return loss_total
 
 if __name__ == "__main__":
@@ -154,3 +159,5 @@ if __name__ == "__main__":
         algo=tpe.suggest,
         max_evals=args.number_of_policies_to_evaluate,
         trials=trials)
+    
+    pickle.dump(trials, open('data/saved_logs/trials_test_hyperopt_yahoo_val_200.pkl', 'wb'))
