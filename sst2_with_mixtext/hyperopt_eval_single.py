@@ -50,7 +50,7 @@ def optimization_function(input_arguments):
     wandb_name = f'hyperopt_single_inter_lada_layers_{arg1}_{arg2}'
 
     model_name = 'bert-base-uncased'
-    dataset_identifier = 'val_10_samples'
+    dataset_identifier = 'sst2_val_10_samples'
 
     val = pickle.load(open('../data/sst2/sst2_10_samples_val.pkl', 'rb'))
 

@@ -133,6 +133,8 @@ class create_dataset(Dataset):
             similarity_file = f'data/computed_data/Intra_LADA_for_10_per_class_yahoo_{self.dataset_identifier}.pkl'
             if dataset_identifier == 'sst2_train_1_percent':
                 similarity_file = f'data/computed_data/Inter_LADA_for_{self.dataset_identifier}.pkl'
+            if dataset_identifier == 'sst2_val_10_samples':
+                similarity_file = f'data/computed_data/Inter_LADA_for_{self.dataset_identifier}.pkl'
             if path.exists(similarity_file):
                 print("Using precomputed close neighbors")
                 self.close_neighbors = pickle.load(open(similarity_file, 'rb'))
