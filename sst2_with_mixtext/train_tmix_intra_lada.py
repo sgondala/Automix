@@ -60,7 +60,7 @@ def own_loss(logits, target, num_labels):
 if __name__ == "__main__":
     wandb.init(project="auto_augment")
     wandb.config.update(args)
-    
+
     run_name = 'train_sst2_on_mixtext_1_percent_tmix_intra_lada'
     wandb.run.name = run_name
     wandb.run.save()
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             {"params": model.module.linear.parameters(), "lr": args.lrlast},
         ]
     )
-    
+
     decayRate = args.lr_decay
     lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optimizer, gamma=decayRate)
 
@@ -98,31 +98,31 @@ if __name__ == "__main__":
         for batch in train_dataloader:
             encoded_1, encoded_2, label_1, label_2 = batch
             assert encoded_1.shape == encoded_2.shape
-            
+
             mix_layer = np.random.choice(args.mix_layers)
             l = np.random.beta(args.alpha, args.alpha)
             l = max(l, 1-l)
-            
+
             logits = model(encoded_1.cuda(), encoded_2.cuda(), l, mix_layer)
             # print('Logits ', logits)
             combined_labels = label_1 * l + label_2 * (1-l)
             # print('Combined logits ', combined_labels)
-            loss = own_loss(logits, combined_labels.cuda(), num_labels=10)
+            loss = own_loss(logits, combined_labels.cuda(), num_labels=2)
             # print('Loss ', loss)
             # assert false
             wandb.log({'Train loss': loss.item()})
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
-        
+
         wandb.log({
-            'lr_bert':lr_scheduler.get_lr()[0], 
+            'lr_bert':lr_scheduler.get_lr()[0],
             'lr_linear':lr_scheduler.get_lr()[1]}
         )
-        
+
         if epoch <= args.stop_decay_after:
             lr_scheduler.step()
-        
+
         # Val loop
         model.eval()
         with torch.no_grad():
@@ -132,7 +132,7 @@ if __name__ == "__main__":
 
             for batch in val_dataloader:
                 encoded_text, _, target, _ = batch
-                
+
                 outputs = model(encoded_text.cuda())
                 loss = criterion(outputs, target.cuda())
                 # all_losses.append(loss.item())
@@ -140,13 +140,13 @@ if __name__ == "__main__":
                 correct += (np.array(predicted.cpu()) == np.array(target.cpu())).sum()
                 loss_total += loss.item() * encoded_text.shape[0]
                 total_sample += encoded_text.shape[0]
-            
+
             acc_total = correct / total_sample
             loss_total = loss_total / total_sample
             print(f'Epoch number {epoch} Val Loss {loss_total} Val accuracy {acc_total}')
             wandb.log({'Val loss' : loss_total})
             wandb.log({'Val accuracy': acc_total})
-        
+
         if acc_total > best_val_accuracy:
             best_val_accuracy = acc_total
             wandb.run.summary['Val accuracy'] = acc_total

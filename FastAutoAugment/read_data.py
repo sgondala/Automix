@@ -16,7 +16,7 @@ from sentence_transformers import SentenceTransformer
 import scipy
 from os import path
 
-def read_csv_and_return_x_y(data_path, dataset_type='ag_news'): 
+def read_csv_and_return_x_y(data_path, dataset_type='ag_news'):
     train_df = pd.read_csv(data_path, header=None)
     train_df = train_df.dropna()
     # Here we only use the bodies and removed titles to do the classifications
@@ -31,12 +31,12 @@ def read_csv_and_return_x_y(data_path, dataset_type='ag_news'):
         X = np.array(train_df[2].values)
     return X, y
 
-def get_datasets(data_path, 
-        max_seq_len=256, 
+def get_datasets(data_path,
+        max_seq_len=256,
         model='distilbert-base-uncased',
-        train_aug=False, 
+        train_aug=False,
         dataset_type='ag_news',
-        stratified_split_k=5, 
+        stratified_split_k=5,
         percentage_of_val_in_each_split = 0.2):
     """
     Read data, split the dataset, and build dataset for dataloaders.
@@ -46,7 +46,7 @@ def get_datasets(data_path,
 
     train_df = pd.read_csv(data_path, header=None)
     train_df = train_df.dropna()
-    
+
     # Here we only use the bodies and removed titles to do the classifications
     n_labels = 0
     if dataset_type=="imdb":
@@ -102,7 +102,7 @@ def get_closest_neighbors(dataset_text):
     return all_similarities
 
 class create_dataset(Dataset):
-    def __init__(self, dataset_text, dataset_label, 
+    def __init__(self, dataset_text, dataset_label,
             tokenizer_type, max_seq_len=256, mix=None, num_classes=10, alpha=-1, knn_lada=3, mu_lada=0.5, translation_loss = 0.2, sampling_ratio = 0.25, probability_of_application = 1, dataset_identifier='train_10'):
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
         self.text = dataset_text
@@ -128,9 +128,11 @@ class create_dataset(Dataset):
                 self.augmentations = [random_deletion_transform]
             else:
                 assert False
-        
+
         if mix == 'Inter_LADA':
             similarity_file = f'data/computed_data/Intra_LADA_for_10_per_class_yahoo_{self.dataset_identifier}.pkl'
+            if dataset_identifier == 'sst2_train_1_percent':
+                similarity_file = f'data/computed_data/Inter_LADA_for_{self.dataset_identifier}.pkl'
             if path.exists(similarity_file):
                 print("Using precomputed close neighbors")
                 self.close_neighbors = pickle.load(open(similarity_file, 'rb'))
@@ -140,7 +142,7 @@ class create_dataset(Dataset):
                 pickle.dump(self.close_neighbors, open(similarity_file, 'wb'))
             self.knn_lada = knn_lada
             self.mu_lada = mu_lada
-        
+
         if mix == 'TMix_with_AdvAug':
             adv_aug_sentences = f'data/computed_data/adv_aug_{translation_loss}_{sampling_ratio}_{self.dataset_identifier}.pkl'
             self.translation_loss = translation_loss
@@ -179,16 +181,16 @@ class create_dataset(Dataset):
         # encode_result += padding
         encode_result, length = self.encode_text(text)
         attention_mask = [1] * length + [0] * (self.max_seq_len - length)
-        return (torch.tensor(encode_result), 
+        return (torch.tensor(encode_result),
                 torch.tensor(attention_mask),
-                self.labels[idx], 
+                self.labels[idx],
                 length)
-    
+
     def __getitem__(self, idx):
         data_for_idx = self.prepare_data(idx)
         if self.mix is None:
             return data_for_idx
-        
+
         if self.mix == 'duplicate' or np.random.rand() > self.probability_of_application:
             # Probability of applying the augmentation, useful for FastAutoAugment
             encoded_1 = data_for_idx[0]
@@ -212,7 +214,7 @@ class create_dataset(Dataset):
             # attention_mask_1 = data_for_idx[1]
             # attention_mask_2 = data_for_random_idx[1]
             return (encoded_1, encoded_2, torch.Tensor(label_1), torch.Tensor(label_2))
-        
+
         if self.mix in ['TMix_with_EDA', 'TMix_with_EDA_synonym_replacement', 'TMix_with_EDA_random_insertion', 'TMix_with_EDA_random_swap', 'TMix_with_EDA_random_deletion']:
             transform_index = np.random.randint(0, len(self.augmentations))
             transform = self.augmentations[transform_index]
@@ -223,7 +225,7 @@ class create_dataset(Dataset):
             label_1[data_for_idx[2]] = 1
             # label_2 = label_1.copy()
             return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
-        
+
         if self.mix == 'Intra_LADA':
             # Permute the sentence
             sentence_split = np.array(self.text[idx].split(' '))
@@ -235,7 +237,7 @@ class create_dataset(Dataset):
             label_1 = [0]*self.num_classes
             label_1[data_for_idx[2]] = 1
             return (encoded_1, torch.tensor(encoded_2), torch.Tensor(label_1), torch.Tensor(label_1))
-        
+
         if self.mix == 'Inter_LADA':
             random_index = None
             similar_indices = self.close_neighbors[idx]
@@ -243,7 +245,7 @@ class create_dataset(Dataset):
                 random_index = np.random.choice(similar_indices[:self.knn_lada])
             else:
                 random_index = np.random.choice(similar_indices[self.knn_lada:])
-            
+
             data_for_random_idx = self.prepare_data(random_index)
 
             # Combine both
