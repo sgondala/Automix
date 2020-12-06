@@ -1,3 +1,4 @@
+# Implementation of AdvAug: Robust Adversarial Augmentation for Neural Machine Translation (https://arxiv.org/pdf/2006.11834.pdf)
 import numpy as np
 import torch
 from scipy.spatial.distance import cosine
