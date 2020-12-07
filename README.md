@@ -16,5 +16,5 @@ The way FAA Algorithm works is as follows -
 
 ## Directions to run the code
 
-yahoo_with_mixtext/train_*/ - Train a FAA policy using the chosen augmentation on the yahoo dataset.
-yahoo_with_mixtext/evaluate_any_model.py - Once train generates a policy, run this to evaluate the policy
+* yahoo_with_mixtext/train_*/ - Train a FAA policy using the chosen augmentation on the yahoo dataset.
+* yahoo_with_mixtext/evaluate_any_model.py - Once train generates a policy, run this to evaluate the policy
